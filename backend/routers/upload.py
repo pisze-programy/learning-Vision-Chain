@@ -3,6 +3,9 @@ import uuid
 
 import aiofiles
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from starlette.responses import StreamingResponse
+
+from routers.agents.router import run_agents_stream
 
 router = APIRouter(tags=["Upload"])
 
@@ -41,8 +44,7 @@ async def upload_image(
         while content := await file.read(1024 * 1024):
             await out_file.write(content)
 
-    return {
-        "status": "success",
-        "task_id": task_id,
-        "filename": stored_filename
-    }
+    return StreamingResponse(
+        run_agents_stream(task_id=task_id, file_path=file_path),
+        media_type="text/event-stream"
+    )

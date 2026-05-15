@@ -1,9 +1,46 @@
 import { useState, ChangeEvent } from 'react';
 
+interface AgentLog {
+  node: string;
+  data: {
+    status?: string;
+    [key: string]: any;
+  };
+  task_id: string;
+}
+
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "uploading" | "success">("idle");
+  const [logs, setLogs] = useState<AgentLog[]>([]);
+  const [currentNode, setCurrentNode] = useState<string | null>(null);
+
+  async function* parseServerSentEvents(stream: ReadableStream<Uint8Array>): AsyncGenerator<AgentLog, void, unknown> {
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    // Wykorzystanie natywnego Async Iteratora zamiast .getReader() i pętli while
+    for await (const chunk of stream as any) {
+      buffer += decoder.decode(chunk, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (line.startsWith("data: ")) {
+          try {
+            const jsonString = line.replace("data: ", "");
+            if (jsonString) {
+              yield JSON.parse(jsonString);
+            }
+          } catch (e) {
+            console.error("STREAM_LINE_PARSE_ERROR", e);
+          }
+        }
+      }
+    }
+  }
 
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -11,6 +48,8 @@ export default function App() {
       setFile(selected);
       setPreview(URL.createObjectURL(selected));
       setStatus("idle");
+      setLogs([]);
+      setCurrentNode(null);
     }
   };
 
@@ -18,6 +57,8 @@ export default function App() {
     if (!file) return;
 
     setStatus("uploading");
+    setLogs([]);
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -26,10 +67,23 @@ export default function App() {
         method: "POST",
         body: formData,
       });
-      if (response.ok) setStatus("success");
+
+      if (!response.ok || !response.body) {
+        throw new Error("NETWORK_RESPONSE_NOT_OK");
+      }
+
+      for await (const log of parseServerSentEvents(response.body)) {
+        setCurrentNode(log.node);
+        setLogs((prev) => [...prev, log]);
+      }
+
+      setStatus("success");
+      setCurrentNode(null);
+
     } catch (error) {
       console.error(error);
       setStatus("idle");
+      setCurrentNode(null);
     }
   };
 
@@ -71,6 +125,22 @@ export default function App() {
             )}
           </button>
         </div>
+
+        {logs.length > 0 && (
+          <div className="border border-slate-100 rounded-xl p-4 bg-slate-50 font-mono text-xs space-y-2 max-h-48 overflow-y-auto">
+            Active Node: {currentNode || "Initializing..."}
+
+            <div className="text-slate-400 border-b border-slate-200 pb-1 font-sans font-semibold">
+              Agent Execution Steps:
+            </div>
+            {logs.map((log, index) => (
+              <div key={index} className="flex flex-col gap-0.5 border-b border-slate-100 last:border-0 pb-1">
+                <span className="text-blue-600 font-bold">[{log.node}]</span>
+                <span className="text-slate-700">{log.data.status || JSON.stringify(log.data)}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
