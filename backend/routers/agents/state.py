@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, Literal
+from typing import TypedDict, Optional, Literal, Dict, Any
 
 GenderType = Literal["male", "female", "none"]
 
@@ -7,5 +7,7 @@ class AgentState(TypedDict):
     cache_id: Optional[str]
     image_path: str
     gender: GenderType
+    features_analysis: Optional[Dict[str, Any]]
+    enhancement_specification: Optional[str]
     result_image_url: str
     status: str
