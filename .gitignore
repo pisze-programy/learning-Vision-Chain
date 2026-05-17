@@ -9,6 +9,8 @@ frontend/node_modules/
 
 uploads/*
 !uploads/.keep
+storage/*
+!storage/.keep
 static/*
 !static/.keep
 

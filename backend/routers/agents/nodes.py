@@ -1,4 +1,6 @@
 import os
+import sys
+import traceback
 from typing import Any, Optional
 
 from dotenv import load_dotenv
@@ -158,70 +160,99 @@ def image_retouch_specifier(state: AgentState):
         return {"status": "FAILED: No features analysis data available to inject into templates"}
 
     if gender == "female":
-        skin_val = analysis["skin_retouching_intensity"] if analysis.get("is_skin_visible") else 0
-        eye_val = analysis["eye_enhancement_intensity"] if analysis.get("are_eyes_visible") else 0
-        jaw_val = analysis["jawline_definition_intensity"] if analysis.get("is_jawline_visible") else 0
-        teeth_val = analysis["dental_aesthetic_intensity"] if analysis.get("are_teeth_visible") else 0
-        hair_val = analysis["hair_polish_intensity"] if analysis.get("is_hair_visible") else 0
-        contour_val = analysis["contouring_dodge_burn_intensity"] if analysis.get("is_face_contouring_possible") else 0
-        body_val = analysis["body_sculpting_intensity"] if analysis.get("is_body_visible") else 0
-        brow_val = analysis["lash_brow_definition_intensity"] if analysis.get("are_brows_visible") else 0
-        specular_val = analysis["specular_highlights_intensity"]
+        skin_part = (
+            "Execute high-end commercial frequency separation retouching. Flawlessly smooth out skin tones, micro-wrinkles, and skin folds while strictly preserving natural pore micro-texture. Eliminate blemishes and uneven skin saturation completely."
+            if analysis.get("is_skin_visible") else "Maintain baseline skin texture."
+        )
+
+        eye_part = (
+            "Apply professional digital catchlight to the eyes. Sharpen the iris micro-details, whiten the sclera naturally, and boost contrast. Darken and mathematically align eyelashes and eyebrows for a striking, high-definition editorial gaze."
+            if analysis.get("are_eyes_visible") else "Maintain baseline eyes and brows."
+        )
+
+        jaw_part = (
+            "Execute subtle anatomical liquify transformation on the lower face. Sharpen the jawline contour, eliminate submental fat (double chin shadows), and elevate the chin structure for a sleek, lifted profile."
+            if analysis.get("is_jawline_visible") else "Maintain baseline jawline structure."
+        )
+
+        teeth_part = (
+            "Apply flawless studio dental bleaching, whitening the visible teeth to a realistic bright ivory shade while clearing inner-mouth shadows."
+            if analysis.get("are_teeth_visible") else "Maintain baseline mouth state."
+        )
+
+        hair_part = (
+            "Apply professional hair polish. Digitally remove all stray flyaway hairs, boost global specular hair reflections, and richness of the hair pigmentation tone for a high-gloss fashion finish."
+            if analysis.get("is_hair_visible") else "Maintain baseline hair structure."
+        )
+
+        contour_part = (
+            "Execute deep studio Dodge and Burn mapping. Dramatically sculpt facial dimensions by deepening cheekbone shadows, slimming the nose bridge, and casting professional micro-contrast highlights on the forehead and cheekbones."
+            if analysis.get("is_face_contouring_possible") else "Maintain baseline facial lighting."
+        )
+
+        body_part = (
+            "Execute digital body sculpting and anatomical liquify. Slim the waistline and arms by 5-8%, smooth out skin folds on the torso, correct posture alignment, and enhance the overall silhouette definition to match a fashion magazine layout."
+            if analysis.get("is_body_visible") else "Maintain baseline body silhouette."
+        )
 
         prompt = (
-            "Professional image-to-image enhancement transforming the input subject into a flawless, high-end editorial portrait, "
-            "utilizing a [Fujifilm GFX 100S, medium format digital camera] aesthetic with ultra-high resolution and natural-looking sharpness. "
-            "Explicitly implement a shallow depth of field, resulting in a dramatic and creamy background bokeh (e.g., f/1.4 - f/2.0 separation) "
-            "that completely blurs background details while keeping the subject tack-sharp. "
-            "Completely replace the original lighting with a professional editorial three-point lighting system: a dominant softbox (key light) "
-            "providing a gentle, diffuse glow, a precise rim light for subject separation, and a subtle fill light. Apply a refined [Cinematic Color Grading] "
-            "with flattering, warm skin tones, rich micro-contrast, and clean, deep shadows, reminiscent of a high-budget fashion publication. "
-            "Ensure precise localized enhancements based on the following scale, where 10 means maximum realistic effect:\n\n"
-            f"[Skin Retouching: {skin_val}] (preserving micro-texture),\n"
-            f"[Eye Enhancement: {eye_val}] (brightening and defining),\n"
-            f"[Jawline Definition: {jaw_val}],\n"
-            f"[Dental Aesthetic: {teeth_val}],\n"
-            f"[Hair Polish: {hair_val}] (removing stray hairs and adding shine),\n"
-            f"[Contouring/Dodge & Burn: {contour_val}],\n"
-            f"[Body Sculpting: {body_val}],\n"
-            f"[Lash & Brow Definition: {brow_val}],\n"
-            f"[Specular Highlights: {specular_val}].\n\n"
-            "Maintain full photorealism without artifacts. Preserve the subject's fundamental features and identity, only enhancing them. "
-            "MANDATORY: Do not add any new elements, objects, or text. Do not remove any existing objects, only blemishes. "
-            "The result must be a clean, sophisticated, editorial portrait"
+            "High-end fashion editorial portrait transformation. Professional image-to-image modification converting the input subject into a polished, magazine-cover luxury version of themselves, maintaining core facial identity but dramatically enhancing aesthetics. "
+            "Apply an 85mm portrait lens compression to optimize head proportions and eliminate smartphone wide-angle distortion. "
+            "Incorporate a soft, diffused directional ambient illumination. Strictly forbid any solid white outlines, sharp edge halos, or continuous body strokes. All light must blend organically into the subject's skin and hair textures. "
+            "Apply professional fashion color grading with warm, glowing skin tones, rich micro-contrast, and deeply saturated clean tones. "
+            "Maintain the exact original background composition, forms, and color palette, but apply a heavy, progressive photographic lens blur simulation. The original background must only be blurred, never replaced with new elements or different environments. "
+            "Execute the following absolute anatomical and texture modifications:\n\n"
+            f"- [Skin & Wrinkles]: {skin_part}\n"
+            f"- [Eyes & Lashes]: {eye_part}\n"
+            f"- [Jawline Geometry]: {jaw_part}\n"
+            f"- [Dental Aesthetics]: {teeth_part}\n"
+            f"- [Hair Gloss]: {hair_part}\n"
+            f"- [Facial Sculpting]: {contour_part}\n"
+            f"- [Body & Silhouette]: {body_part}\n\n"
+            "The final output must look like the exact same person, post-processed by a world-class fashion retoucher, looking flawless, elegant, and perfectly attractive without generating any double limbs or broken artifacts. "
+            "MANDATORY: Do not add any new elements, objects, or text. Do not change, remove, or replace the original background, only blur its existing content."
         )
 
     elif gender == "male":
-        skin_val = analysis["skin_clarity_intensity"] if analysis.get("is_skin_visible") else 0
-        eye_val = analysis["eye_brow_intensity"] if analysis.get("are_eyes_visible") else 0
-        jaw_val = analysis["jawline_structure_intensity"] if analysis.get("is_jawline_visible") else 0
-        teeth_val = analysis["dental_aesthetic_intensity"] if analysis.get("are_teeth_visible") else 0
-        beard_val = analysis["beard_grooming_intensity"] if analysis.get("has_beard") else 0
-        hair_val = analysis["hair_pigmentation_intensity"] if analysis.get("is_hair_visible") else 0
-        contour_val = analysis["masculine_contouring_intensity"] if analysis.get("is_face_contouring_possible") else 0
-        body_val = analysis["muscle_definition_intensity"] if analysis.get("is_body_visible") else 0
-        specular_val = analysis["specular_highlights_intensity"]
+        lens_instruction = "Apply heavy 135mm structural focal flattening and 5% slim face transformation." if analysis.get(
+            "lens_simulation_compression") else "Keep original field of view."
+        skin_instruction = "Execute advanced low and high frequency split, eliminating tonal defects while enforcing strict matte finish with raw pore preservation." if analysis.get(
+            "frequency_separation_skin") else "Keep original skin texture."
+        eye_instruction = "Maximize high-frequency micro-contrast on brow hairs and lashes for an intense editorial gaze." if analysis.get(
+            "eye_brow_micro_contrast") else "Keep original eyes and brows."
+        jaw_instruction = "Execute aggressive anatomical jawline carving, eliminating jaw obloids and widening lower face bone structure." if analysis.get(
+            "jawline_carving_structure") else "Keep original jawline structure."
+        beard_instruction = "Execute full geometric filling, boosting hair follicle density and edge micro-sharpness." if analysis.get(
+            "beard_stubble_grooming") else "Keep original beard state."
+        lighting_instruction = (
+            "Introduce a soft, highly diffused directional side-glow bleeding organically from the upper-left background. "
+            "The light must wrap softly around the texture of the hair and jawline, creating a natural light-bleed (wrap-around effect) "
+            "instead of a solid white line. Strictly forbid any continuous uniform outlines, sharp vector-like body strokes, or halo artifacts. "
+            "Ensure the lighting remains non-uniform, casting deep organic contrast shadows on the opposite side of the subject."
+        ) if analysis.get("rembrandt_split_relighting") else "Keep original lighting conditions."
+        contour_instruction = "Execute intense facial restructuring via exposure mapping, accentuating cheekbone cavities, slimming the nose bridge, and deepening the sub-jawline shadow." if analysis.get(
+            "anatomic_dodge_burn") else "Keep original facial depth."
+        body_instruction = "Execute structural mesh deformation expanding shoulder width and sharpening trapezius posture alignment." if analysis.get(
+            "shoulder_trapezius_sculpting") else "Keep original body posture."
+        bokeh_instruction = "Execute an optical progressive blur that blends the background smoothly with the subject's edges, avoiding any artificial edge halo artifacts." if analysis.get(
+            "depth_masking_bokeh") else "Keep original background clarity."
 
         prompt = (
-            "Professional image-to-image enhancement transforming the input subject into a radiant, high-end masculine editorial portrait. "
-            "Utilize a [Fujifilm GFX 100S] aesthetic, emphasizing luminous skin textures and vibrant, natural-looking sharpness. "
-            "Implement a moderate depth of field (f/2.8 - f/4.0), creating a soft, professional background bokeh that maintains environment context "
-            "while keeping the subject as the focus. "
-            "Replace original lighting with [Golden Hour Light Professional Session Lighting], featuring a powerful light warm soft light "
-            "(simulating sun-drenched flash) and soft ambient fill to eliminate harsh dark shadows. Apply a [Warm, Vibrant Cinematic Color Grading] "
-            "with golden undertones, boosted saturation, and rich micro-contrast for a sun-kissed, healthy look. "
-            "Execute localized enhancements precisely according to the scale (0 to 10):\n\n"
-            f"[Skin Clarity & Vitality: {skin_val}] (healthy glow, removing only blemishes),\n"
-            f"[Eye & Brow Intensity: {eye_val}] (sharper gaze, naturally filled brows),\n"
-            f"[Jawline & Bone Structure: {jaw_val}] (refined, chiseled definition),\n"
-            f"[Dental Aesthetic: {teeth_val}] (natural white),\n"
-            f"[Beard & Stubble Grooming: {beard_val}] (perfectly shaped and dense),\n"
-            f"[Hair Pigmentation: {hair_val}] (rich, warm tones),\n"
-            f"[Masculine Contouring: {contour_val}] (enhancing features with light, not darkness),\n"
-            f"[Muscle Definition & Posture: {body_val}],\n"
-            f"[Specular Highlights: {specular_val}] (soft glow on cheekbones and forehead to simulate studio flash).\n\n"
-            "Preserve the subject's fundamental identity. MANDATORY: Do not add any new elements, objects, or text. "
-            "Do not remove any existing objects. The result must be a sharp, sophisticated, masculine masterpiece"
+            "Professional image-to-image structural modification transforming the input subject into a high-end corporate editorial masculine masterpiece. "
+            f"Lens Simulation Specification: {lens_instruction} "
+            f"Lighting Architecture: {lighting_instruction} "
+            "Enforce a strict matte finish across all surfaces, rejecting any plastic smoothing artifacts, while maximizing high-frequency micro-contrast on skin pores, stubble, and hair follicles. "
+            "Execute localized structural transformations strictly according to the following dynamic parameters:\n\n"
+            f"-[Skin Texturing]: {skin_instruction}\n"
+            f"-[Ocular Definition]: {eye_instruction}\n"
+            f"-[Bone Carving]: {jaw_instruction}\n"
+            f"-[Facial Hair Optimization]: {beard_instruction}\n"
+            f"-[Anatomic Dodge and Burn]: {contour_instruction}\n"
+            f"-[Skeletal Silhouette Modification]: {body_instruction}\n"
+            f"-[Depth Mapping Falloff]: {bokeh_instruction}\n\n"
+            "Preserve the subject's fundamental core identity while executing the structural modifications. "
+            "MANDATORY: Do not add any foreign elements, objects, or text. Do not remove existing baseline objects. "
+            "The output must strictly be a sharp, high-contrast, matte-finished corporate portrait."
         )
     else:
         return {"status": "SKIPPED: Non-human or undetermined gender, prompt skipped"}
@@ -253,13 +284,53 @@ def execute_image_enhancement(state: AgentState):
 
         response = client.models.generate_content(
             model="gemini-2.5-flash-image",
-            contents=[input_image, specification]
+            contents=[input_image, specification],
+            config=types.GenerateContentConfig(
+                safety_settings=[
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                        threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                        threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                    ),
+                    types.SafetySetting(
+                        category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                        threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+                    ),
+                ]
+            )
         )
 
+        candidates = getattr(response, "candidates", [])
+        if not candidates:
+            return {"status": "FAILED: No candidates returned from model. Check safety filters or API quota."}
+
+        candidate = candidates[0]
+        print(f"Finish Reason: {candidate.finish_reason}")
+
+        ratings = getattr(candidate, "safety_ratings", []) or []
+        for rating in ratings:
+            print(f"Category: {rating.category}, Probability: {rating.probability}, Blocked: {rating.blocked}")
+
+        content = getattr(candidate, "content", None)
+        if not content or not getattr(content, "parts", None):
+            finish_reason = getattr(candidate, "finish_reason", "UNKNOWN")
+            return {"status": f"FAILED: Empty content. Finish reason: {finish_reason}"}
+
         generated_bytes = None
-        for part in response.candidates[0].content.parts:
-            if part.inline_data is not None:
-                generated_bytes = part.inline_data.data
+
+        parts = getattr(content, "parts", []) if content else []
+
+        for part in parts:
+            inline_data = getattr(part, "inline_data", None)
+            if inline_data is not None and hasattr(inline_data, "data"):
+                generated_bytes = inline_data.data
                 break
 
         if not generated_bytes:
@@ -278,7 +349,20 @@ def execute_image_enhancement(state: AgentState):
             "status": "SUCCESS: Enhanced image generated successfully via multimodal image model"
         }
 
+
     except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+
+        full_stack_trace = "".join(
+            traceback.format_exception(exc_type, exc_value, exc_traceback)
+        )
+
+        print("-" * 60)
+        print("CRITICAL GRAPH NODE ERROR CRASH STACK TRACE:")
+        print(full_stack_trace)
+        print("-" * 60)
+
         return {
-            "status": f"ERROR: Image generation failed. Details: {str(e)}"
+            "status": f"ERROR: Image generation failed. Message: {str(e)}",
+            "stack_trace": full_stack_trace
         }

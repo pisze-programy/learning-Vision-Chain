@@ -20,7 +20,6 @@ export default function App() {
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
 
-    // Wykorzystanie natywnego Async Iteratora zamiast .getReader() i pętli while
     for await (const chunk of stream as any) {
       buffer += decoder.decode(chunk, { stream: true });
       const parts = buffer.split("\n\n");
