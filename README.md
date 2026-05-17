@@ -10,6 +10,8 @@ Sandbox project built to experiment with multimodal AI pipelines and stateful or
 
 The goal is to take a user-uploaded portrait, analyze it, and dynamically transform it using a graph-based agent workflow
 
+![LangSmith](docs/vc-ls.png)
+
 ### The Stack & Why
 * **LangGraph & LangChain:** Handles the agent workflow, state management, and routing logic between execution nodes
 * **Google Gen AI (`gemini-2.5-flash-image`):** Used both as a vision tool to analyze the image and as a generative engine for the final image-to-image modification.
